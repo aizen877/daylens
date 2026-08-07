@@ -1,0 +1,14 @@
+{
+  "manifest_version": 2,
+  "name": "DayLens Browser Connector",
+  "version": "0.1.0",
+  "description": "Opt-in, privacy-first active-tab metadata connector for DayLens.",
+  "incognito": "spanning",
+  "permissions": ["tabs", "storage", "idle", "http://127.0.0.1:8777/*", "https://www.youtube.com/*"],
+  "content_scripts": [{"matches": ["https://www.youtube.com/*", "https://youtube.com/*"], "js": ["youtube.js"], "run_at": "document_idle"}],
+  "background": {"scripts": ["background.js"]},
+  "options_ui": {"page": "options.html", "open_in_tab": true},
+  "browser_action": {"default_title": "DayLens Browser Connector"}
+}
+
+

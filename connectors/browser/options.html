@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>DayLens Extension Dashboard & Debugger</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0908;
+      --panel: #161210;
+      --panel-hover: #221c19;
+      --border: rgba(255, 255, 255, 0.1);
+      --orange: #f97316;
+      --orange-dark: #ea580c;
+      --orange-glow: rgba(249, 115, 22, 0.35);
+      --text: #fafaf9;
+      --text-muted: #a8a29e;
+      --green: #4ade80;
+      --red: #f87171;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      width: 380px;
+      min-height: 520px;
+      padding: 16px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--orange), var(--orange-dark));
+      display: grid;
+      place-items: center;
+      color: white;
+      box-shadow: 0 0 14px var(--orange-glow);
+    }
+    .brand-title {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .browser-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 99px;
+      background: rgba(249, 115, 22, 0.12);
+      border: 1px solid var(--orange-glow);
+      color: var(--orange);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .status-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .status-info { display: flex; align-items: center; gap: 8px; }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #78716c;
+    }
+    .status-dot.online { background: var(--green); box-shadow: 0 0 10px var(--green); }
+    .status-dot.offline { background: var(--red); box-shadow: 0 0 10px var(--red); }
+    .status-text { font-size: 12px; font-weight: 700; }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+    }
+    .toggle-label { font-weight: 600; font-size: 12px; color: var(--text); }
+    
+    .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; inset: 0;
+      background-color: #332d29; transition: .25s; border-radius: 22px;
+    }
+    .slider:before {
+      position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px;
+      background-color: white; transition: .25s; border-radius: 50%;
+    }
+    input:checked + .slider { background-color: var(--orange); }
+    input:checked + .slider:before { transform: translateX(18px); }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin: 14px 0 6px 2px;
+    }
+
+    @keyframes pulseSkeleton {
+      0% { opacity: 0.4; }
+      50% { opacity: 0.95; }
+      100% { opacity: 0.4; }
+    }
+    .skeleton-box {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      animation: pulseSkeleton 1.2s infinite ease-in-out;
+    }
+
+    /* Live Extracted Metadata Preview Box */
+    .extracted-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 12px;
+      position: relative;
+    }
+    .extracted-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .live-tag {
+      font-size: 10px; font-weight: 800; text-transform: uppercase;
+      color: var(--orange); background: rgba(249, 115, 22, 0.15);
+      padding: 2px 8px; border-radius: 99px; border: 1px solid var(--orange-glow);
+    }
+    .extracted-body {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .extracted-thumb {
+      width: 72px;
+      height: 48px;
+      min-width: 72px;
+      border-radius: 6px;
+      background: #000;
+      object-fit: cover;
+      border: 1px solid var(--border);
+    }
+    .extracted-info { overflow: hidden; min-width: 0; }
+    .extracted-title { font-weight: 700; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
+    .extracted-sub { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Terminal Console Logs */
+    .terminal-box {
+      background: #050403;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
+      height: 120px;
+      overflow-y: auto;
+      color: #d6d3d1;
+      margin-bottom: 14px;
+      line-height: 1.4;
+    }
+    .log-line { margin-bottom: 4px; word-break: break-all; }
+    .log-time { color: var(--text-muted); margin-right: 6px; }
+    .log-status { color: var(--green); font-weight: 700; margin-left: 6px; }
+    .log-status.err { color: var(--red); }
+
+    .btn-row { display: flex; gap: 8px; }
+    button.btn-primary {
+      flex: 1; padding: 9px;
+      background: linear-gradient(135deg, var(--orange), var(--orange-dark));
+      border: none; color: white; border-radius: 8px; font-weight: 700; font-size: 12px;
+      cursor: pointer; box-shadow: 0 4px 14px var(--orange-glow);
+    }
+    button.btn-sec {
+      padding: 9px 12px; background: var(--panel); border: 1px solid var(--border);
+      color: var(--text); border-radius: 8px; font-weight: 600; font-size: 11px; cursor: pointer;
+    }
+    button.btn-sec:hover { background: var(--panel-hover); }
+
+    #statusMessage {
+      margin-top: 8px; font-size: 11px; font-weight: 700; color: var(--green); text-align: center; min-height: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+      </div>
+      <div class="brand-title">DayLens Connector</div>
+    </div>
+    <div class="browser-badge" id="browserBadge">
+      <span>Browser</span>
+    </div>
+  </div>
+
+  <div class="status-card">
+    <div class="status-info">
+      <div class="status-dot" id="statusDot"></div>
+      <span class="status-text" id="statusText">Checking agent...</span>
+    </div>
+    <span style="font-size: 10px; color: var(--text-muted);">http://127.0.0.1:8777</span>
+  </div>
+
+  <div class="toggle-row">
+    <span class="toggle-label">Active Tab Tracking</span>
+    <label class="switch">
+      <input type="checkbox" id="enabled">
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <div class="toggle-row">
+    <span class="toggle-label">Incognito / Private Mode</span>
+    <label class="switch">
+      <input type="checkbox" id="trackIncognito">
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <div class="section-title">Live Extracted Data Preview</div>
+  <div class="extracted-card" id="extractedCard">
+    <div class="extracted-header">
+      <span style="font-size:11px; font-weight:700; color:var(--text-muted);" id="extractedType">Active Session</span>
+      <span class="live-tag">Live Extracted</span>
+    </div>
+    <div class="extracted-body">
+      <img src="data:image/svg+xml;utf8,<svg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'><rect width='24' height='24' fill='%231c1917'/></svg>" class="extracted-thumb" id="extractedThumb" alt="Preview">
+      <div class="extracted-info">
+        <div class="extracted-title" id="extractedTitle">No active event captured yet</div>
+        <div class="extracted-sub" id="extractedSub">Open a tab or watch a YouTube video to test</div>
+      </div>
+    </div>
+
+    <!-- Video Description Collapsible Box -->
+    <div id="popupDescWrap" style="display:none; margin-top:10px; border-top:1px solid var(--border); padding-top:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:10px; font-weight:800; text-transform:uppercase; color:var(--text-muted); display:inline-flex; align-items:center; gap:4px;">
+          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="3" y2="18"/></svg>
+          Description
+        </span>
+        <button id="popupDescToggleBtn" style="background:none; border:none; color:var(--orange); font-size:10px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:3px;">
+          <span>Expand</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+      </div>
+      <div id="popupDescBox" style="display:none; margin-top:4px; font-size:11px; color:var(--text-muted); background:rgba(0,0,0,0.3); border:1px solid var(--border); border-radius:6px; padding:6px 8px; max-height:80px; overflow-y:auto; white-space:pre-wrap; line-height:1.4;"></div>
+    </div>
+
+    <!-- Video Transcript Box inside Extension Popup -->
+    <div id="popupTranscriptWrap" style="display:none; margin-top:10px; border-top:1px solid var(--border); padding-top:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="font-size:11px; font-weight:800; color:var(--text); display:inline-flex; align-items:center; gap:4px;">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#c084fc" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Transcript
+          </span>
+          <span id="popupTranscriptStatus" style="font-size:9px; font-weight:800; padding:2px 8px; border-radius:99px; background:rgba(34,197,94,0.15); color:#4ade80; border:1px solid rgba(34,197,94,0.3); display:inline-flex; align-items:center; gap:4px;">
+            <span class="dot-ping" style="width:5px; height:5px; border-radius:50%; background:#4ade80; display:inline-block; box-shadow:0 0 6px #4ade80;"></span>
+            <span>Available</span>
+          </span>
+        </div>
+        <div style="display:flex; gap:4px;">
+          <button id="popupToggleTranscriptBtn" class="btn-icon-flex" style="background:var(--panel-hover); border:1px solid var(--border); color:var(--text); font-size:10px; padding:3px 8px; border-radius:6px; font-weight:700; cursor:pointer;">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            <span>Show Transcript</span>
+          </button>
+          <button id="popupCopyTranscriptBtn" class="btn-icon-flex" style="display:none; background:var(--panel-hover); border:1px solid var(--border); color:var(--text); font-size:10px; padding:3px 8px; border-radius:6px; font-weight:700; cursor:pointer;">
+            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>Copy</span>
+          </button>
+        </div>
+      </div>
+      <div id="popupTranscriptBox" style="display:none; background:#070605; border:1px solid rgba(168,85,247,0.3); border-radius:8px; padding:8px; max-height:130px; overflow-y:auto; font-size:11px; line-height:1.4; color:var(--text);">
+        <div style="color:var(--text-muted); text-align:center; padding:6px;">Loading transcript...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+    <span>Extension Debugger Console</span>
+    <span style="font-size:10px; color:var(--orange); cursor:pointer;" onclick="clearLogs()">Clear</span>
+  </div>
+  <div class="terminal-box" id="terminalBox">
+    <div class="log-line"><span class="log-time">[System]</span> DayLens connector debugger ready. Waiting for events...</div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-primary" id="save">Save Settings</button>
+    <button class="btn-sec" id="testPing">Test Connection</button>
+  </div>
+  <p id="statusMessage"></p>
+
+  <script src="options.js"></script>
+</body>
+</html>
