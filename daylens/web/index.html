@@ -27,8 +27,8 @@
           </div>
           <span class="brand-text">DayLens</span>
         </div>
-        <button class="sidebar-toggle-btn" onclick="toggleSidebarSlider()" title="Toggle Sidebar">
-          <svg id="toggleIcon" class="svg-icon" viewBox="0 0 24 24">
+        <button class="sidebar-toggle-btn" onclick="toggleSidebarSlider()" title="Toggle Sidebar" aria-label="Toggle sidebar">
+          <svg id="toggleIcon" class="svg-icon" viewBox="0 0 24 24" style="transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);">
             <polyline points="15 18 9 12 15 6"/>
           </svg>
         </button>
@@ -36,7 +36,7 @@
 
       <div class="nav-section-label">Main Menu</div>
       <nav class="nav-menu">
-        <div class="nav-item active" onclick="switchPage('overview', this)">
+        <div class="nav-item active" onclick="switchPage('overview', this)" role="button" tabindex="0">
           <svg class="svg-icon" viewBox="0 0 24 24">
             <rect x="3" y="3" width="7" height="9" rx="1.5"/>
             <rect x="14" y="3" width="7" height="5" rx="1.5"/>
@@ -44,42 +44,48 @@
             <rect x="3" y="16" width="7" height="5" rx="1.5"/>
           </svg>
           <span class="nav-item-text">Overview</span>
+          <span class="nav-glow"></span>
         </div>
-        <div class="nav-item" onclick="switchPage('timeline', this)">
+        <div class="nav-item" onclick="switchPage('timeline', this)" role="button" tabindex="0">
           <svg class="svg-icon" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="9"/>
             <polyline points="12 6 12 12 16 14"/>
           </svg>
           <span class="nav-item-text">Timeline</span>
+          <span class="nav-glow"></span>
         </div>
-        <div class="nav-item" onclick="switchPage('categories', this)">
+        <div class="nav-item" onclick="switchPage('categories', this)" role="button" tabindex="0">
           <svg class="svg-icon" viewBox="0 0 24 24">
             <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
             <line x1="7" y1="7" x2="7.01" y2="7"/>
           </svg>
           <span class="nav-item-text">Categories</span>
+          <span class="nav-glow"></span>
         </div>
-        <div class="nav-item" onclick="switchPage('youtube', this)">
+        <div class="nav-item" onclick="switchPage('youtube', this)" role="button" tabindex="0">
           <svg class="svg-icon" viewBox="0 0 24 24">
             <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/>
             <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/>
           </svg>
           <span class="nav-item-text">YouTube Intelligence</span>
+          <span class="nav-glow"></span>
         </div>
-        <div class="nav-item" onclick="switchPage('livescreen', this)">
+        <div class="nav-item" onclick="switchPage('livescreen', this)" role="button" tabindex="0">
           <svg class="svg-icon" viewBox="0 0 24 24">
             <rect x="2" y="3" width="20" height="14" rx="2"/>
             <line x1="8" y1="21" x2="16" y2="21"/>
             <line x1="12" y1="17" x2="12" y2="21"/>
           </svg>
           <span class="nav-item-text">Live Screen</span>
+          <span class="nav-glow"></span>
         </div>
-        <div class="nav-item" onclick="switchPage('settings', this)">
+        <div class="nav-item" onclick="switchPage('settings', this)" role="button" tabindex="0">
           <svg class="svg-icon" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="3"/>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
           </svg>
           <span class="nav-item-text">Settings</span>
+          <span class="nav-glow"></span>
         </div>
       </nav>
 
@@ -107,13 +113,17 @@
             <span id="statusText">Tracking Live</span>
           </div>
           <button class="btn" id="pauseToggleBtn" onclick="togglePause()">
-            <svg class="svg-icon" viewBox="0 0 24 24" width="14" height="14"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-            Pause Tracking
+            <svg id="pauseIcon" class="svg-icon" viewBox="0 0 24 24" width="14" height="14"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            <span id="pauseBtnText">Pause Tracking</span>
           </button>
-          <button class="btn" onclick="toggleTheme()">
-            <svg class="svg-icon" viewBox="0 0 24 24" width="14" height="14"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <button class="btn" onclick="toggleTheme()" aria-label="Toggle theme">
+            <svg id="themeIcon" class="svg-icon" viewBox="0 0 24 24" width="14" height="14"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
             <span id="themeBtnText">Light Mode</span>
           </button>
+          <div class="live-clock">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span id="liveClockText">--:--:--</span>
+          </div>
         </div>
       </header>
 
@@ -136,14 +146,14 @@
       <div class="page-view active" id="view-overview">
         <!-- Top KPI Stats Cards -->
         <div class="hero-grid" id="heroGrid">
-          <div class="glass-card"><div class="card-label">Total Time Tracked</div><div class="big-stat">--</div></div>
-          <div class="glass-card"><div class="card-label">Top Category Share</div><div class="big-stat">--</div></div>
-          <div class="glass-card"><div class="card-label">Most Used App</div><div class="big-stat">--</div></div>
+          <div class="glass-card stagger-enter stagger-1"><div class="card-label">Total Time Tracked</div><div class="big-stat">--</div></div>
+          <div class="glass-card stagger-enter stagger-2"><div class="card-label">Top Category Share</div><div class="big-stat">--</div></div>
+          <div class="glass-card stagger-enter stagger-3"><div class="card-label">Most Used App</div><div class="big-stat">--</div></div>
         </div>
 
         <!-- Hourly Pattern & Category Donut -->
         <div class="charts-grid">
-          <div class="glass-card chart-card">
+          <div class="glass-card chart-card stagger-enter stagger-4">
             <div class="section-head">
               <span>Hourly Activity Pattern</span>
               <span class="badge-tag">24-Hour Distribution</span>
@@ -161,7 +171,7 @@
             </div>
           </div>
 
-          <div class="glass-card chart-card">
+          <div class="glass-card chart-card stagger-enter stagger-5">
             <div class="section-head">
               <span>Category Share</span>
               <span class="badge-tag">Ratio</span>
@@ -169,6 +179,7 @@
             <div class="donut-container">
               <div class="donut-chart-wrap">
                 <svg class="donut-svg" viewBox="0 0 100 100">
+                  <circle class="donut-track" cx="50" cy="50" r="38"/>
                   <g id="donutSegmentsGroup"></g>
                 </svg>
                 <div class="donut-center-text">
@@ -182,7 +193,7 @@
         </div>
 
         <!-- Leaderboard Card -->
-        <div class="leaderboard-card">
+        <div class="leaderboard-card stagger-enter stagger-6">
           <div class="section-head">
             <span>Application & Site Usage</span>
             <div class="tabs" id="lbTabs">

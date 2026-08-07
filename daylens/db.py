@@ -134,6 +134,9 @@ def resolve_date_range(range_type: str, custom_date: str | None = None) -> tuple
         except Exception:
             start = today_start
             end = now_local.replace(hour=23, minute=59, second=59)
+    elif range_type == "all":
+        start = dt.datetime(2000, 1, 1, 0, 0, 0, tzinfo=now_local.tzinfo)
+        end = now_local.replace(hour=23, minute=59, second=59)
     else:  # today
         start = today_start
         end = now_local.replace(hour=23, minute=59, second=59)

@@ -24,6 +24,12 @@
   --radius-md: 12px;
   --radius-sm: 8px;
   --sidebar-width: 230px;
+  /* Motion speed tokens (2026 calm-UX standard: quick transitions, no sluggishness) */
+  --dur-fast: 0.18s;
+  --dur-norm: 0.28s;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --font-stat: 'Space Grotesk', 'Inter', sans-serif;
 }
 
 [data-theme="light"] {
@@ -100,6 +106,9 @@ aside.sidebar {
 [data-theme="light"] aside.sidebar {
   background: rgba(255, 255, 255, 0.9);
 }
+[data-theme="light"] aside.sidebar .brand-mark {
+  color: #fff;
+}
 
 .brand-row {
   display: flex;
@@ -125,7 +134,26 @@ aside.sidebar {
   place-items: center;
   color: white;
   box-shadow: 0 0 20px var(--orange-glow);
+  position: relative;
 }
+/* Animated lens ring orbiting the brand mark */
+.brand-mark::before {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 13px;
+  border: 1.5px solid transparent;
+  background: conic-gradient(from 0deg, rgba(249,115,22,0.55), transparent 45%, transparent 80%, rgba(249,115,22,0.35)) border-box;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: brandOrbit 6s linear infinite;
+  pointer-events: none;
+}
+@keyframes brandOrbit { to { transform: rotate(360deg); } }
+.brand-mark svg { animation: brandPulse 3s ease-in-out infinite; }
+@keyframes brandPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
 .brand-text {
   font-size: 19px;
   font-weight: 800;
@@ -191,6 +219,15 @@ aside.sidebar {
 .shell.collapsed .nav-item { justify-content: center; padding: 10px; }
 
 .nav-item:hover { color: var(--text); background: var(--panel-hover); }
+.nav-item:hover .svg-icon { animation: iconWiggle 0.4s ease both; }
+@keyframes iconWiggle {
+  0% { transform: rotate(0deg); }
+  30% { transform: rotate(-8deg) scale(1.05); }
+  60% { transform: rotate(5deg) scale(1.05); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+.nav-item.active .svg-icon { animation: iconPopIn 0.35s var(--ease-out-expo) both; }
+@keyframes iconPopIn { from { transform: scale(0.6) translateY(4px); opacity: 0.4; } to { transform: scale(1) translateY(0); opacity: 1; } }
 .nav-item.active {
   color: white;
   background: linear-gradient(135deg, rgba(249, 115, 22, 0.28), rgba(234, 88, 12, 0.16));
@@ -218,6 +255,22 @@ aside.sidebar {
   font-size: 11px;
 }
 .sidebar-footer strong { color: var(--orange-primary); display: block; margin-bottom: 2px; }
+/* Animated glow sliver behind the active nav item */
+.nav-glow {
+  position: absolute;
+  right: 10px;
+  width: 3px;
+  height: 16px;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #f97316, #ea580c);
+  box-shadow: 0 0 10px rgba(249,115,22,0.8);
+  opacity: 0;
+  transition: opacity var(--dur-fast) ease;
+  display: none;
+}
+.nav-item { position: relative; }
+.nav-item.active .nav-glow { opacity: 1; animation: glowPulse 2.2s ease-in-out infinite; }
+@keyframes glowPulse { 0%,100% { opacity: 0.75; } 50% { opacity: 1; } }
 
 /* Main Content Area */
 main.content-area {
@@ -239,8 +292,26 @@ header.topbar {
   font-size: 26px;
   font-weight: 800;
   letter-spacing: -0.04em;
+  animation: titleReveal 0.5s var(--ease-out-expo) both;
 }
+@keyframes titleReveal { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 .page-subtitle { color: var(--text-muted); font-size: 13px; }
+/* Live clock in topbar */
+.live-clock {
+  font-variant-numeric: tabular-nums;
+  font-family: 'Space Grotesk', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+.live-clock svg { color: var(--orange-primary); }
 
 .top-controls { display: flex; align-items: center; gap: 10px; }
 
@@ -256,9 +327,20 @@ header.topbar {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: all 0.2s ease;
+  transition: all var(--dur-fast) var(--ease-out-expo);
+  position: relative;
+  overflow: hidden;
 }
-.btn:hover { background: var(--panel-hover); border-color: var(--border-glow); }
+.btn:hover { background: var(--panel-hover); border-color: var(--border-glow); transform: translateY(-1px); }
+.btn:active { transform: scale(0.96); }
+/* Ripple click feedback — viral tactile micro-interaction */
+.btn .ripple { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.35); transform: scale(0); animation: rippleFx 0.55s ease-out; pointer-events: none; }
+@keyframes rippleFx { to { transform: scale(2.6); opacity: 0; } }
+/* Gear icon spins on hover — classic premium SaaS pattern */
+.btn:hover .svg-icon.settings-spin { animation: gearSpin 1.6s linear infinite; }
+@keyframes gearSpin { to { transform: rotate(360deg); } }
+.btn-orange:hover svg { animation: iconBounce 0.5s var(--ease-spring); }
+@keyframes iconBounce { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-3px) scale(1.15); } }
 .btn-orange {
   background: linear-gradient(135deg, #f97316, #ea580c);
   color: white;
@@ -283,6 +365,21 @@ header.topbar {
   border-radius: 50%;
   background: var(--green);
   box-shadow: 0 0 10px var(--green);
+  position: relative;
+}
+/* Pulsing radar ring — viral live-status pattern */
+.status-dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1.5px solid var(--green);
+  animation: statusPing 1.8s var(--ease-out-expo) infinite;
+}
+.status-dot.paused::after { border-color: var(--amber); }
+@keyframes statusPing {
+  0% { transform: scale(0.6); opacity: 1; }
+  75%, 100% { transform: scale(2.1); opacity: 0; }
 }
 .status-dot.paused { background: var(--amber); box-shadow: 0 0 10px var(--amber); }
 
@@ -394,6 +491,13 @@ header.topbar {
   display: block;
   animation: fadeInSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
+/* Staggered card cascade on page switch */
+.page-view.active .stagger-1 { animation-delay: 0.02s; }
+.page-view.active .stagger-2 { animation-delay: 0.07s; }
+.page-view.active .stagger-3 { animation-delay: 0.12s; }
+.page-view.active .stagger-4 { animation-delay: 0.17s; }
+.page-view.active .stagger-5 { animation-delay: 0.22s; }
+.page-view.active .stagger-6 { animation-delay: 0.27s; }
 @keyframes fadeInSlide {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
@@ -415,8 +519,24 @@ header.topbar {
   box-shadow: var(--shadow);
   position: relative;
   overflow: hidden;
+  transition: transform var(--dur-norm) var(--ease-out-expo), border-color var(--dur-fast) ease, box-shadow var(--dur-norm) ease;
 }
-.glass-card:hover { border-color: var(--border-glow); }
+.glass-card:hover { border-color: var(--border-glow); transform: translateY(-2px); box-shadow: 0 20px 45px -12px rgba(0,0,0,0.7), 0 0 30px rgba(249,115,22,0.1); }
+/* Subtle inner highlight — premium depth layer */
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent);
+  pointer-events: none;
+}
+/* Staggered cascade entrance — 2026 bento-grid card flow */
+.stagger-enter {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: staggerFade 0.5s var(--ease-out-expo) forwards;
+}
+@keyframes staggerFade { to { opacity: 1; transform: translateY(0); } }
 
 .card-label {
   font-size: 10px;
@@ -433,7 +553,28 @@ header.topbar {
   line-height: 1.1;
   margin-bottom: 4px;
   color: var(--text);
+  font-family: var(--font-stat);
+  font-variant-numeric: tabular-nums;
 }
+/* Count-up reveal for KPI numbers */
+.big-stat.count-up {
+  animation: countReveal 0.7s var(--ease-out-expo) both;
+}
+@keyframes countReveal {
+  from { opacity: 0; transform: translateY(10px) scale(0.94); filter: blur(3px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+/* Mini KPI icon badges with gradient glow */
+.kpi-icon-badge {
+  width: 32px; height: 32px; min-width: 32px; border-radius: 9px;
+  display: grid; place-items: center;
+  background: linear-gradient(135deg, rgba(249,115,22,0.18), rgba(249,115,22,0.05));
+  border: 1px solid rgba(249,115,22,0.28);
+  box-shadow: 0 0 14px rgba(249,115,22,0.16);
+  color: var(--orange-primary);
+}
+.kpi-icon-badge svg { animation: iconFloat 3s ease-in-out infinite; }
+@keyframes iconFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
 .stat-unit { font-size: 14px; font-weight: 600; color: var(--text-muted); }
 .stat-subtext { font-size: 12px; color: var(--orange-primary); font-weight: 600; }
 
@@ -489,10 +630,28 @@ header.topbar {
 .bar-rect {
   fill: url(#orangeGradient);
   rx: 4;
-  transition: height 0.3s ease, y 0.3s ease, fill 0.2s ease;
+  transform-box: fill-box;
+  transform-origin: bottom center;
+  animation: barGrow 0.7s var(--ease-out-expo) both;
+  transition: fill var(--dur-fast) ease, transform var(--dur-fast) ease;
   cursor: pointer;
 }
-.bar-rect:hover { fill: #fb923c; }
+.bar-rect:hover { fill: #fb923c; transform: scaleY(1.06); }
+@keyframes barGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+/* Histogram trend-line glow path */
+.trend-path {
+  fill: none;
+  stroke: var(--orange-primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.85;
+  filter: drop-shadow(0 0 4px rgba(249,115,22,0.7));
+  stroke-dasharray: 2000;
+  stroke-dashoffset: 2000;
+  animation: trendDraw 1.2s var(--ease-out-expo) 0.3s forwards;
+}
+@keyframes trendDraw { to { stroke-dashoffset: 0; } }
 
 /* Category Donut Circle Chart & Legend */
 .donut-container {
@@ -513,6 +672,18 @@ header.topbar {
   height: 100%;
   transform: rotate(-90deg);
 }
+.donut-svg circle {
+  transform-origin: 50px 50px;
+  transform-box: fill-box;
+  animation: donutSpin 0.8s var(--ease-out-expo) both;
+}
+@keyframes donutSpin { from { transform: scale(0.85) rotate(-40deg); opacity: 0; } to { transform: scale(1) rotate(0deg); opacity: 0.9; } }
+.donut-track {
+  fill: none;
+  stroke: rgba(255,255,255,0.05);
+  stroke-width: 14;
+}
+[data-theme="light"] .donut-track { stroke: rgba(120,113,108,0.1); }
 .donut-center-text {
   position: absolute;
   inset: 0;
@@ -616,13 +787,18 @@ header.topbar {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  transition: all 0.2s ease;
+  transition: all var(--dur-fast) var(--ease-out-expo);
 }
 .leaderboard-item:hover {
   background: var(--panel-hover);
   border-color: var(--border-glow);
   transform: translateX(3px);
 }
+/* Animated progress bars on render */
+.progress-bar-fill {
+  animation: fillGrow 0.9s var(--ease-out-expo) both;
+}
+@keyframes fillGrow { from { width: 0 !important; } }
 .rank-badge {
   font-size: 12px;
   font-weight: 800;
@@ -693,7 +869,7 @@ header.topbar {
   font-size: 12px;
   outline: none;
 }
-.search-input:focus { border-color: var(--orange-primary); }
+.search-input:focus { border-color: var(--orange-primary); box-shadow: 0 0 0 3px rgba(249,115,22,0.14); }
 
 .badge-filter {
   padding: 6px 14px;
@@ -723,11 +899,13 @@ header.topbar {
   align-items: center;
   gap: 12px;
   backdrop-filter: blur(12px);
-  transition: transform 0.15s ease, border-color 0.15s ease;
+  transition: transform var(--dur-fast) var(--ease-out-expo), border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
   width: 100%;
   max-width: 100%;
   overflow: hidden;
+  animation: timelineSlideIn 0.4s var(--ease-out-expo) both;
 }
+@keyframes timelineSlideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
 .timeline-item:hover {
   transform: translateX(3px);
   border-color: var(--border-glow);
@@ -795,6 +973,33 @@ header.topbar {
 }
 .skeleton-card { height: 90px; }
 .skeleton-item { height: 50px; margin-bottom: 8px; }
+
+/* Skeleton dots for inline list loading */
+.skeleton-dots { display: inline-flex; gap: 4px; align-items: center; }
+.skeleton-dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--text-muted); animation: dotPulse 1.2s ease-in-out infinite; }
+.skeleton-dots span:nth-child(2) { animation-delay: 0.15s; }
+.skeleton-dots span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes dotPulse { 0%,100% { opacity: 0.25; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.1); } }
+
+/* Premium empty-state illustration container */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 42px 20px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.empty-state svg { opacity: 0.5; animation: emptyFloat 3s ease-in-out infinite; }
+@keyframes emptyFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+/* Accessibility: respect reduced-motion preferences (2026 standard) */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+  .brand-mark::before, .status-dot::after { animation: none; }
+}
 
 .rules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
 .rule-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px; }
@@ -951,6 +1156,13 @@ header.topbar {
   justify-content: space-between;
   align-items: center;
   margin-top: 4px;
+}
+
+/* Global accessibility: visible focus rings for keyboard users (2026 standard) */
+*:focus-visible {
+  outline: 2px solid var(--orange-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 /* Modal Overlay & Card Details Dialog */

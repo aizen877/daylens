@@ -121,6 +121,7 @@ function toggleSidebarSlider() {
 function switchPage(pageId, el) {
   document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
   if(el) el.classList.add('active');
+  // Active nav icon pop-in handled by .nav-item.active .svg-icon CSS animation
 
   document.querySelectorAll('.page-view').forEach(view => view.classList.remove('active'));
   document.getElementById(`view-${pageId}`).classList.add('active');
@@ -141,11 +142,99 @@ function switchPage(pageId, el) {
 
   if(pageId === 'categories') renderCategoryRulesPage();
   if(pageId === 'youtube') fetchYouTubeData();
+  triggerStaggerEntrance();
   if(pageId === 'livescreen') {
     startScreenStream();
   } else {
     stopScreenStream();
   }
+}
+
+/* --- 2026 UX: live clock in the topbar (premium utility detail) --- */
+function updateLiveClock() {
+  const el = document.getElementById('liveClockText');
+  if (!el) return;
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  const s = String(now.getSeconds()).padStart(2, '0');
+  el.innerText = `${h}:${m}:${s}`;
+}
+updateLiveClock();
+setInterval(updateLiveClock, 1000);
+
+/* --- Tactile ripple feedback on all .btn clicks (viral micro-interaction) --- */
+document.addEventListener('click', function (evt) {
+  const btn = evt.target.closest('.btn');
+  if (!btn || btn.disabled) return;
+  const rect = btn.getBoundingClientRect();
+  const ripple = document.createElement('span');
+  const size = Math.max(rect.width, rect.height);
+  ripple.className = 'ripple';
+  ripple.style.width = ripple.style.height = size + 'px';
+  ripple.style.left = (evt.clientX - rect.left - size / 2) + 'px';
+  ripple.style.top = (evt.clientY - rect.top - size / 2) + 'px';
+  btn.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 600);
+});
+
+/* --- Count-up animation for KPI stat numbers --- */
+function animateCountUp(element, targetNumber, suffix, durationMs) {
+  if (!element) return;
+  element.classList.add('count-up');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced) { element.innerText = targetNumber + suffix; return; }
+  const start = performance.now();
+  function tick(now) {
+    const p = Math.min(1, (now - start) / durationMs);
+    const eased = 1 - Math.pow(1 - p, 3);
+    element.innerText = Math.round(targetNumber * eased) + suffix;
+    if (p < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+/* --- Pause icon morph: pause <-> play --- */
+function updatePauseIconSVG(isPaused) {
+  const icon = document.getElementById('pauseIcon');
+  if (!icon) return;
+  icon.style.transition = 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1)';
+  icon.style.transform = 'scale(0.5)';
+  setTimeout(() => {
+    if (isPaused) {
+      icon.innerHTML = '<polygon points="6 3 20 12 6 21"/>';
+    } else {
+      icon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+    }
+    icon.style.transform = 'scale(1)';
+  }, 130);
+}
+
+/* --- Theme icon morph: moon <-> sun with spin --- */
+function updateThemeIconSVG(theme) {
+  const icon = document.getElementById('themeIcon');
+  if (!icon) return;
+  icon.style.transition = 'transform 0.45s cubic-bezier(0.34,1.56,0.64,1)';
+  icon.style.transform = 'scale(0.4) rotate(-90deg)';
+  setTimeout(() => {
+    if (theme === 'dark') {
+      icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+    } else {
+      icon.innerHTML = '<circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>';
+    }
+    icon.style.transform = 'scale(1) rotate(0deg)';
+  }, 220);
+}
+
+/* --- Staggered card cascade entrance on page switch --- */
+function triggerStaggerEntrance() {
+  const activeView = document.querySelector('.page-view.active');
+  if (!activeView) return;
+  activeView.querySelectorAll('.stagger-enter').forEach(el => {
+    el.style.animation = 'none';
+    void el.offsetWidth;
+    el.style.animation = '';
+  });
 }
 
 let screenStreamTimer = null;
@@ -234,7 +323,7 @@ async function fetchYouTubeData() {
     const data = await res.json();
     const totalSec = data.total_seconds !== undefined ? Math.round(data.total_seconds) : Math.round((data.total_minutes || 0) * 60);
     document.getElementById('youtubeKpis').innerHTML = `
-      <div class="glass-card kpi-card-yt">
+      <div class="glass-card kpi-card-yt stagger-enter stagger-1">
         <div class="kpi-header">
           <div class="kpi-icon-wrap yt-red-glow">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="#FF0000">
@@ -243,14 +332,14 @@ async function fetchYouTubeData() {
           </div>
           <span class="card-label">Total Watch Time</span>
         </div>
-        <div class="big-stat" style="margin-top: 8px;">${formatDuration(totalSec)}</div>
+        <div class="big-stat count-up" style="margin-top: 8px;">${formatDuration(totalSec)}</div>
         <div class="kpi-subtext" style="color:var(--text-muted); font-size:11px; margin-top:4px; display:inline-flex; align-items:center; gap:4px;">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           Active watch duration
         </div>
       </div>
 
-      <div class="glass-card kpi-card-yt">
+      <div class="glass-card kpi-card-yt stagger-enter stagger-2">
         <div class="kpi-header">
           <div class="kpi-icon-wrap indigo-glow">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#818cf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -266,7 +355,7 @@ async function fetchYouTubeData() {
         </div>
       </div>
 
-      <div class="glass-card kpi-card-yt">
+      <div class="glass-card kpi-card-yt stagger-enter stagger-3">
         <div class="kpi-header">
           <div class="kpi-icon-wrap rose-glow">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#f43f5e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -296,7 +385,7 @@ function renderYouTubeTopChannels(channels) {
   if (!container) return;
   const filtered = (channels || []).filter(c => c.channel && c.channel !== 'YouTube Channel' && c.channel !== 'Unknown Channel');
   if (!filtered || !filtered.length) {
-    container.innerHTML = '<div style="color:var(--text-muted); font-size:12px; padding:16px; text-align:center;">No channel history recorded yet.</div>';
+    container.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="var(--orange-primary)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg><div><strong style="color:var(--text); font-size:13px;">No channel history yet</strong><br><span style="font-size:11px;">Watch videos with the browser connector enabled to see insights here.</span></div></div>';
     return;
   }
   container.innerHTML = filtered.map((ch, idx) => {
@@ -325,7 +414,7 @@ function renderYouTubeTopTopics(topics, totalSec) {
   const container = document.getElementById('youtubeTopTopics');
   if (!container) return;
   if (!topics || !topics.length) {
-    container.innerHTML = '<div style="color:var(--text-muted); font-size:12px; padding:20px; text-align:center; background:rgba(255,255,255,0.015); border-radius:12px; border:1px dashed var(--border);">No topic categories recorded yet.</div>';
+    container.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="var(--orange-primary)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg><div><strong style="color:var(--text); font-size:13px;">No topic breakdown yet</strong><br><span style="font-size:11px;">Topic categories appear after your first watch sessions are analyzed.</span></div></div>';
     return;
   }
   const maxSec = Math.max(...topics.map(t => t.seconds), 1);
@@ -372,7 +461,7 @@ function renderYouTubeVideoList() {
   }
 
   if (!items.length) {
-    container.innerHTML = '<div style="color:var(--text-muted); padding:40px 20px; text-align:center; background:var(--panel); border-radius:14px; border:1px dashed var(--border); font-size:13px;">No YouTube sessions match the selected filter or search query.</div>';
+    container.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="var(--orange-primary)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg><div><strong style="color:var(--text); font-size:13px;">No matching YouTube sessions</strong><br><span style="font-size:11px;">Try a different filter or search term.</span></div></div>';
     return;
   }
 
@@ -593,16 +682,12 @@ function copyModalTranscript() {
   });
 }
 
-function closeVideoModal() {
-  document.getElementById('videoModalOverlay').classList.remove('active');
-}
-
-
 function toggleTheme() {
   const current = document.documentElement.getAttribute('data-theme');
   const next = current === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   document.getElementById('themeBtnText').innerText = next === 'dark' ? 'Light Mode' : 'Dark Mode';
+  updateThemeIconSVG(next);
 }
 
 function updateTabPill(containerId, pillId) {
@@ -694,6 +779,7 @@ function updatePauseUI(isPaused) {
     if(txt) txt.innerText = 'Tracking Live';
     if(btn) btn.innerText = 'Pause Tracking';
   }
+  updatePauseIconSVG(isPaused);
 }
 
 function formatDuration(secs) {
@@ -724,17 +810,17 @@ async function fetchDashboardData() {
     const topAppSec = Math.round(data.top_app_minutes * 60);
 
     document.getElementById('heroGrid').innerHTML = `
-      <div class="glass-card">
+      <div class="glass-card stagger-enter stagger-1">
         <div class="card-label">Total Time Tracked</div>
-        <div class="big-stat">${escapeHtml(formattedTotalTime)}</div>
+        <div class="big-stat count-up" id="kpiTotalTime">${escapeHtml(formattedTotalTime)}</div>
         <div class="stat-subtext">${data.total_minutes} mins active logged</div>
       </div>
-      <div class="glass-card">
+      <div class="glass-card stagger-enter stagger-2">
         <div class="card-label">Top Category Share</div>
         <div class="big-stat" style="font-size: 24px; text-transform: capitalize;">${escapeHtml(data.top_category || 'None')}</div>
         <div class="stat-subtext">${data.cat_breakdown && data.cat_breakdown.length > 0 ? formatDuration(Math.round(data.cat_breakdown[0].minutes * 60)) + ' total' : 'No activity'}</div>
       </div>
-      <div class="glass-card">
+      <div class="glass-card stagger-enter stagger-3">
         <div class="card-label">Most Used App</div>
         <div class="hero-app-row">
           <div class="hero-app-icon">${topAppIconMarkup}</div>
@@ -768,6 +854,7 @@ function renderHistogram(hourly) {
   const chartH = 150;
 
   let htmlBars = '';
+  let linePoints = [];
   hourly.forEach((item, i) => {
     const barHeight = Math.max(4, (item.minutes / maxMin) * chartH);
     const x = startX + i * (totalW / 24) + 2;
@@ -777,12 +864,18 @@ function renderHistogram(hourly) {
     const hourLabel = `${item.hour} - ${nextHour < 10 ? '0' + nextHour : nextHour}:00`;
     const durStr = formatDuration(Math.round(item.minutes * 60));
 
+    const stagger = Math.min(0.55, i * 0.028);
     htmlBars += `<rect class="bar-rect" x="${x}" y="${y}" width="${barW}" height="${barHeight}"
+      style="animation-delay: ${stagger}s;"
       onmouseenter="showTooltip(event, '${hourLabel}', '${durStr} active')"
       onmouseleave="hideTooltip()">
     </rect>`;
+    linePoints.push({ x: x + barW / 2, y: y });
   });
-  group.innerHTML = htmlBars;
+
+  // Animated trend-line glow path connecting bar peaks (premium chart pattern)
+  const trendPath = linePoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+  group.innerHTML = htmlBars + `<path class="trend-path" d="${trendPath}" style="animation-delay: 0.35s;"/>`;
 }
 
 function renderCategoryDonut(catBreakdown, totalMinutes) {
@@ -872,7 +965,10 @@ function renderLeaderboard(apps, totalMinutes) {
   }
 
   if (!apps || apps.length === 0) {
-    container.innerHTML = `<div style="color: var(--text-muted); padding: 20px; text-align: center;">No activity recorded for this period.</div>`;
+    container.innerHTML = `<div class="empty-state">
+      <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="var(--orange-primary)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="8" y1="8" x2="8" y2="8.01"/><line x1="12" y1="8" x2="12" y2="8.01"/><line x1="16" y1="8" x2="16" y2="8.01"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>
+      <div><strong style="color: var(--text); font-size: 14px;">No activity recorded yet</strong><br><span style="font-size: 12px;">Run <code>python daylens.py track</code> in the background to start collecting app usage.</span></div>
+    </div>`;
     return;
   }
 
@@ -884,7 +980,10 @@ function renderLeaderboard(apps, totalMinutes) {
   }
 
   if (filteredApps.length === 0) {
-    container.innerHTML = `<div style="color: var(--text-muted); padding: 20px; text-align: center;">No ${leaderboardTab === 'website' ? 'website' : 'software'} activity recorded for this period.</div>`;
+    container.innerHTML = `<div class="empty-state">
+      <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="var(--orange-primary)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <div><strong style="color: var(--text); font-size: 14px;">No ${leaderboardTab === 'website' ? 'website' : 'software'} activity</strong><br><span style="font-size: 12px;">Nothing found for this filter and period.</span></div>
+    </div>`;
     return;
   }
 
@@ -904,7 +1003,7 @@ function renderLeaderboard(apps, totalMinutes) {
     const durStr = formatDuration(Math.round(appItem.minutes * 60));
 
     html += `
-      <div class="leaderboard-item">
+      <div class="leaderboard-item" style="animation-delay: ${Math.min(0.35, index * 0.045)}s;">
         <div class="rank-badge ${rankClass}">#${rank}</div>
         <div class="app-brand-icon">${iconMarkup}</div>
         <div>
@@ -912,7 +1011,7 @@ function renderLeaderboard(apps, totalMinutes) {
           <div class="leader-cat-badge">${escapeHtml(appItem.category)}</div>
         </div>
         <div class="progress-bar-wrap">
-          <div class="progress-bar-fill" style="width: ${pctOfTop}%;"></div>
+          <div class="progress-bar-fill" style="width: ${pctOfTop}%; animation-delay: ${0.3 + index * 0.05}s;"></div>
         </div>
         <div class="time-badge">${durStr}</div>
         <div class="percent-badge">${pctOfDay}% share</div>
@@ -940,10 +1039,12 @@ async function fetchActivities(reset = false) {
 
     const container = document.getElementById('timelineList');
     if (reset) {
-      container.innerHTML = '';
+      // Skeleton loading state during fetch (perceived-reliability pattern)
+      container.innerHTML = Array.from({length: 3}).map(() => '<div class="skeleton skeleton-item"></div>').join('');
     }
 
     let htmlEvents = '';
+    let evIndex = 0;
     list.forEach(ev => {
       const startTimeStr = formatLocalTime(ev.started_at);
       const endTimeStr = formatLocalTime(ev.ended_at);
@@ -965,7 +1066,7 @@ async function fetchActivities(reset = false) {
       const cleanAppName = formatAppName(ev.app);
 
       htmlEvents += `
-        <div class="timeline-item">
+        <div class="timeline-item" style="animation-delay: ${Math.min(0.4, evIndex * 0.05)}s;">
           <div>
             <div class="time-stamp">${dateStr}</div>
             <span class="time-subtext">${startTimeStr} - ${endTimeStr}${durationText}</span>
@@ -980,6 +1081,7 @@ async function fetchActivities(reset = false) {
           <div style="text-align: right;">${idleStatusMarkup}</div>
         </div>
       `;
+      evIndex += 1;
     });
     container.insertAdjacentHTML('beforeend', htmlEvents);
 
