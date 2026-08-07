@@ -104,9 +104,12 @@ def connect(db_path: Path | str | None = None) -> sqlite3.Connection:
     conn.execute("""CREATE TABLE IF NOT EXISTS youtube_analyses (
         video_id TEXT PRIMARY KEY,
         primary_topic TEXT NOT NULL DEFAULT '',
+        purpose TEXT NOT NULL DEFAULT '',
+        target_audience TEXT NOT NULL DEFAULT '',
         subtopics_json TEXT NOT NULL DEFAULT '[]',
         summary TEXT NOT NULL DEFAULT '',
         key_points_json TEXT NOT NULL DEFAULT '[]',
+        takeaways_json TEXT NOT NULL DEFAULT '[]',
         chapters_json TEXT NOT NULL DEFAULT '[]',
         keywords_json TEXT NOT NULL DEFAULT '[]',
         learning_label TEXT NOT NULL DEFAULT '',
@@ -116,6 +119,14 @@ def connect(db_path: Path | str | None = None) -> sqlite3.Connection:
         created_at TEXT NOT NULL,
         FOREIGN KEY(video_id) REFERENCES youtube_videos(video_id)
     )""")
+    ya_cols = {row["name"] for row in conn.execute("PRAGMA table_info(youtube_analyses)")}
+    if "purpose" not in ya_cols:
+        conn.execute("ALTER TABLE youtube_analyses ADD COLUMN purpose TEXT NOT NULL DEFAULT ''")
+    if "target_audience" not in ya_cols:
+        conn.execute("ALTER TABLE youtube_analyses ADD COLUMN target_audience TEXT NOT NULL DEFAULT ''")
+    if "takeaways_json" not in ya_cols:
+        conn.execute("ALTER TABLE youtube_analyses ADD COLUMN takeaways_json TEXT NOT NULL DEFAULT '[]'")
+
     conn.execute("""CREATE TABLE IF NOT EXISTS category_rules (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         category TEXT UNIQUE NOT NULL,

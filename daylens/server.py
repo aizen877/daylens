@@ -394,6 +394,7 @@ class Handler(BaseHTTPRequestHandler):
                     if item.get("video_id"):
                         item_meta = item.get("meta") or {}
                         v_meta = conn.execute("SELECT description, transcript_status, analysis_status FROM youtube_videos WHERE video_id = ?", (item["video_id"],)).fetchone()
+                        a_row = conn.execute("SELECT primary_topic, purpose, target_audience, summary, learning_label FROM youtube_analyses WHERE video_id = ?", (item["video_id"],)).fetchone()
                         if v_meta:
                             item["description"] = v_meta["description"] or item_meta.get("description", "")
                             item["transcript_status"] = v_meta["transcript_status"] or "unknown"
@@ -402,6 +403,18 @@ class Handler(BaseHTTPRequestHandler):
                             item["description"] = item_meta.get("description", "")
                             item["transcript_status"] = "unknown"
                             item["analysis_status"] = "pending"
+
+                        if a_row:
+                            item["analysis"] = {
+                                "primary_topic": a_row["primary_topic"],
+                                "purpose": a_row["purpose"],
+                                "target_audience": a_row["target_audience"],
+                                "summary": a_row["summary"],
+                                "learning_label": a_row["learning_label"],
+                            }
+                        else:
+                            item["analysis"] = None
+
 
                 valid_channels = [c for c in channels_map.values() if c["channel"] and c["channel"] != "YouTube Channel" and c["watch_seconds"] > 0]
                 if not valid_channels:
@@ -487,6 +500,36 @@ class Handler(BaseHTTPRequestHandler):
                     "retrieved_at": now_iso
                 })
                 return
+
+            if path == "/api/youtube/analysis":
+                v_id = params.get("video_id", [""])[0].strip()
+                if not v_id:
+                    self.send_json({"error": "video_id is required"}, status=400)
+                    return
+                a_row = conn.execute("SELECT * FROM youtube_analyses WHERE video_id = ?", (v_id,)).fetchone()
+                if not a_row:
+                    from daylens.analyzer import analyze_youtube_video
+                    analysis = analyze_youtube_video(v_id, conn)
+                else:
+                    analysis = {
+                        "video_id": a_row["video_id"],
+                        "primary_topic": a_row["primary_topic"],
+                        "purpose": a_row["purpose"],
+                        "target_audience": a_row["target_audience"],
+                        "subtopics": json.loads(a_row["subtopics_json"] or "[]"),
+                        "summary": a_row["summary"],
+                        "key_points": json.loads(a_row["key_points_json"] or "[]"),
+                        "takeaways": json.loads(a_row["takeaways_json"] or "[]"),
+                        "chapters": json.loads(a_row["chapters_json"] or "[]"),
+                        "keywords": json.loads(a_row["keywords_json"] or "[]"),
+                        "learning_label": a_row["learning_label"],
+                        "confidence": a_row["confidence"],
+                        "model_name": a_row["model_name"],
+                        "created_at": a_row["created_at"]
+                    }
+                self.send_json(analysis)
+                return
+
 
             if path == "/api/stats":
                 range_type = params.get("range", ["today"])[0]
@@ -612,6 +655,22 @@ class Handler(BaseHTTPRequestHandler):
             finally:
                 conn.close()
             return
+
+        if path == "/api/youtube/analyze":
+            conn = connect()
+            try:
+                data = json.loads(body_bytes.decode("utf-8")) if body_bytes else {}
+                v_id = str(data.get("video_id", "")).strip()
+                if not v_id:
+                    self.send_json({"error": "video_id is required"}, status=400)
+                    return
+                from daylens.analyzer import analyze_youtube_video
+                result = analyze_youtube_video(v_id, conn)
+                self.send_json(result)
+            finally:
+                conn.close()
+            return
+
 
         self.send_error(404)
 

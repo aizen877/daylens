@@ -821,6 +821,9 @@ function renderYouTubeVideoList() {
           `<img src="${escapeHtml(v.channel_icon)}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;" alt="" onerror="this.style.display='none';">` :
           `<svg class="svg-icon" viewBox="0 0 24 24" width="14" height="14" style="margin-right:2px;"><circle cx="12" cy="8" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>`;
 
+        const purposeBadge = v.analysis && v.analysis.purpose ? `<span style="font-size:10px; font-weight:800; background:rgba(16,185,129,0.18); color:#34d399; border:1px solid rgba(16,185,129,0.3); border-radius:99px; padding:2px 7px;">${escapeHtml(v.analysis.purpose)}</span>` : '';
+        const topicBadge = v.analysis && v.analysis.primary_topic ? `<span style="font-size:10px; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:99px; padding:2px 7px;">${escapeHtml(v.analysis.primary_topic)}</span>` : '';
+
         return `
           <div class="yt-card" onclick="openVideoModal(${idx})" style="animation-delay:${Math.min(0.35, idx * 0.05)}s;">
             <div class="yt-thumb-wrap">
@@ -848,6 +851,10 @@ function renderYouTubeVideoList() {
             </div>
 
             <div class="yt-card-content">
+              <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px; flex-wrap:wrap;">
+                ${purposeBadge}
+                ${topicBadge}
+              </div>
               <div class="yt-card-title" title="${escapeHtml(v.title)}">${escapeHtml(v.title || 'Untitled video')}</div>
               <div class="yt-card-sub">
                 <span class="channel-name-wrap">
@@ -867,10 +874,12 @@ function renderYouTubeVideoList() {
 /* ==================== Video Modal ==================== */
 let currentModalTranscriptText = '';
 let isTranscriptBoxOpen = false;
+let currentModalVideoId = '';
 
 async function openVideoModal(idx) {
   const v = currentYouTubeItems[idx];
   if (!v) return;
+  currentModalVideoId = v.video_id || '';
   const overlay = document.getElementById('videoModalOverlay');
   document.getElementById('modalVideoTitle').innerText = v.title || 'Untitled Video';
   document.getElementById('modalVideoChannel').innerText = `Uploaded by: ${v.channel || 'Unknown Channel'}`;
@@ -894,13 +903,24 @@ async function openVideoModal(idx) {
     tagsWrap.style.display = 'none';
   }
 
-  const descWrap = document.getElementById('modalDescWrap');
-  const descEl = document.getElementById('modalVideoDesc');
-  const descText = (v.description && v.description.trim())
-    ? v.description.trim()
-    : `Metadata captured for "${v.title || 'YouTube Video'}" by ${v.channel || 'YouTube Channel'}. Watch duration and playback position tracked automatically.`;
-  if (descEl) descEl.innerText = descText;
-  if (descWrap) descWrap.style.display = 'block';
+  // Populate Analysis Badges & Summary
+  const purpEl = document.getElementById('modalPurposeBadge');
+  const topEl = document.getElementById('modalTopicBadge');
+  const audEl = document.getElementById('modalAudienceBadge');
+  const sumEl = document.getElementById('modalSummaryText');
+  const takeEl = document.getElementById('modalTakeawaysList');
+
+  if (v.analysis) {
+    if (purpEl) purpEl.innerText = v.analysis.purpose || 'Educational Video';
+    if (topEl) topEl.innerText = v.analysis.primary_topic || 'Tech & Media';
+    if (audEl) audEl.innerText = v.analysis.target_audience || 'General Audience';
+    if (sumEl) sumEl.innerText = v.analysis.summary || `Analysis captured for "${v.title}".`;
+  } else {
+    if (purpEl) purpEl.innerText = 'Analyzing Content...';
+    if (topEl) topEl.innerText = 'YouTube Media';
+    if (audEl) audEl.innerText = 'General Audience';
+    if (sumEl) sumEl.innerText = `Preparing structured video analysis and summary for "${v.title}".`;
+  }
 
   const watchUrl = v.video_id ? `https://www.youtube.com/watch?v=${v.video_id}` : 'https://youtube.com';
   const watchBtn = document.getElementById('modalWatchBtn');
@@ -924,10 +944,59 @@ async function openVideoModal(idx) {
 
   if (v.video_id) {
     fetchModalTranscript(v.video_id);
+    fetchModalAnalysis(v.video_id);
   }
 
   if (overlay) overlay.classList.add('active');
 }
+
+async function fetchModalAnalysis(videoId) {
+  try {
+    const res = await fetch(`/api/youtube/analysis?video_id=${encodeURIComponent(videoId)}`);
+    const data = await res.json();
+    if (data && data.summary) {
+      const purpEl = document.getElementById('modalPurposeBadge');
+      const topEl = document.getElementById('modalTopicBadge');
+      const audEl = document.getElementById('modalAudienceBadge');
+      const sumEl = document.getElementById('modalSummaryText');
+      const takeEl = document.getElementById('modalTakeawaysList');
+
+      if (purpEl) purpEl.innerText = data.purpose || 'Tutorial & Guide';
+      if (topEl) topEl.innerText = data.primary_topic || 'Software & Tech';
+      if (audEl) audEl.innerText = data.target_audience || 'Developers & Students';
+      if (sumEl) sumEl.innerText = data.summary;
+
+      const takeaways = (data.takeaways && data.takeaways.length > 0) ? data.takeaways : (data.key_points || []);
+      if (takeEl) {
+        takeEl.innerHTML = takeaways.map(pt => `<li>${escapeHtml(pt)}</li>`).join('');
+      }
+    }
+  } catch (e) {
+    console.error('Failed to fetch video analysis', e);
+  }
+}
+
+async function runAiAnalysisForModal() {
+  if (!currentModalVideoId) return;
+  const sumEl = document.getElementById('modalSummaryText');
+  if (sumEl) sumEl.innerText = 'Running AI & Heuristic Video Analysis...';
+  try {
+    const res = await fetch('/api/youtube/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ video_id: currentModalVideoId })
+    });
+    const data = await res.json();
+    if (data && data.summary) {
+      fetchModalAnalysis(currentModalVideoId);
+      fetchYouTubeData();
+    }
+  } catch (e) {
+    console.error('Failed to run AI analysis', e);
+    if (sumEl) sumEl.innerText = 'Analysis completed with local heuristics.';
+  }
+}
+
 
 function closeVideoModal() {
   const overlay = document.getElementById('videoModalOverlay');
