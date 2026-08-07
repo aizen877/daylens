@@ -4,10 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DayLens — Privacy-First Activity & Personal Analytics</title>
-  <!-- Google Fonts: Inter, Plus Jakarta Sans, Outfit, Space Grotesk -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -19,16 +18,16 @@
       <div class="brand-row">
         <div class="brand">
           <div class="brand-mark">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="9"/>
               <path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>
-              <circle cx="12" cy="12" r="3" fill="currentColor"/>
+              <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>
             </svg>
           </div>
           <span class="brand-text">DayLens</span>
         </div>
         <button class="sidebar-toggle-btn" onclick="toggleSidebarSlider()" title="Toggle Sidebar" aria-label="Toggle sidebar">
-          <svg id="toggleIcon" class="svg-icon" viewBox="0 0 24 24" style="transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);">
+          <svg id="toggleIcon" class="svg-icon" viewBox="0 0 24 24" width="15" height="15" style="transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);">
             <polyline points="15 18 9 12 15 6"/>
           </svg>
         </button>
@@ -38,10 +37,10 @@
       <nav class="nav-menu">
         <div class="nav-item active" onclick="switchPage('overview', this)" role="button" tabindex="0">
           <svg class="svg-icon" viewBox="0 0 24 24">
-            <rect x="3" y="3" width="7" height="9" rx="1.5"/>
-            <rect x="14" y="3" width="7" height="5" rx="1.5"/>
-            <rect x="14" y="12" width="7" height="9" rx="1.5"/>
-            <rect x="3" y="16" width="7" height="5" rx="1.5"/>
+            <rect x="3" y="3" width="7" height="9" rx="2"/>
+            <rect x="14" y="3" width="7" height="5" rx="2"/>
+            <rect x="14" y="12" width="7" height="9" rx="2"/>
+            <rect x="3" y="16" width="7" height="5" rx="2"/>
           </svg>
           <span class="nav-item-text">Overview</span>
           <span class="nav-glow"></span>
@@ -49,7 +48,7 @@
         <div class="nav-item" onclick="switchPage('timeline', this)" role="button" tabindex="0">
           <svg class="svg-icon" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="9"/>
-            <polyline points="12 6 12 12 16 14"/>
+            <polyline points="12 7 12 12 15.5 14"/>
           </svg>
           <span class="nav-item-text">Timeline</span>
           <span class="nav-glow"></span>
@@ -64,15 +63,15 @@
         </div>
         <div class="nav-item" onclick="switchPage('youtube', this)" role="button" tabindex="0">
           <svg class="svg-icon" viewBox="0 0 24 24">
-            <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/>
-            <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/>
+            <rect x="2.5" y="5" width="19" height="14" rx="4.5"/>
+            <polygon points="10 9.2 15 12 10 14.8 10 9.2"/>
           </svg>
           <span class="nav-item-text">YouTube Intelligence</span>
           <span class="nav-glow"></span>
         </div>
         <div class="nav-item" onclick="switchPage('livescreen', this)" role="button" tabindex="0">
           <svg class="svg-icon" viewBox="0 0 24 24">
-            <rect x="2" y="3" width="20" height="14" rx="2"/>
+            <rect x="2" y="3" width="20" height="14" rx="2.5"/>
             <line x1="8" y1="21" x2="16" y2="21"/>
             <line x1="12" y1="17" x2="12" y2="21"/>
           </svg>
@@ -91,8 +90,8 @@
 
       <div class="sidebar-footer">
         <div style="display:flex; align-items:center; gap:6px;">
-          <span class="pulse-ring"></span>
-          <strong>DayLens Local v1.0</strong>
+          <span class="status-dot"></span>
+          <strong>DayLens Local v2.0</strong>
         </div>
         <span style="color:var(--text-muted); font-size:10px;">100% Private SQLite Engine</span>
       </div>
@@ -113,7 +112,7 @@
             <span id="statusText">Tracking Live</span>
           </div>
           <button class="btn" id="pauseToggleBtn" onclick="togglePause()">
-            <svg id="pauseIcon" class="svg-icon" viewBox="0 0 24 24" width="14" height="14"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            <svg id="pauseIcon" class="svg-icon" viewBox="0 0 24 24" width="14" height="14"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
             <span id="pauseBtnText">Pause Tracking</span>
           </button>
           <button class="btn" onclick="toggleTheme()" aria-label="Toggle theme">
@@ -121,7 +120,7 @@
             <span id="themeBtnText">Light Mode</span>
           </button>
           <div class="live-clock">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <svg class="svg-icon" viewBox="0 0 24 24" width="13" height="13"><circle cx="12" cy="12" r="9.5"/><polyline points="12 7.5 12 12 15 13.8"/></svg>
             <span id="liveClockText">--:--:--</span>
           </div>
         </div>
@@ -144,34 +143,52 @@
 
       <!-- VIEW 1: Overview Page -->
       <div class="page-view active" id="view-overview">
-        <!-- Top KPI Stats Cards -->
-        <div class="hero-grid" id="heroGrid">
-          <div class="glass-card stagger-enter stagger-1"><div class="card-label">Total Time Tracked</div><div class="big-stat">--</div></div>
-          <div class="glass-card stagger-enter stagger-2"><div class="card-label">Top Category Share</div><div class="big-stat">--</div></div>
-          <div class="glass-card stagger-enter stagger-3"><div class="card-label">Most Used App</div><div class="big-stat">--</div></div>
-        </div>
+        <!-- Bento Grid: hero KPI + side stats -->
+        <div class="bento-grid">
+          <div class="glass-card bento-hero kpi-hero stagger-enter stagger-1" id="heroCard">
+            <div class="section-head">
+              <span>At a Glance</span>
+              <span class="badge-tag">Live Feed</span>
+            </div>
+            <div style="padding: 14px 18px 18px;">
+              <div class="card-label">Total Time Tracked</div>
+              <div class="big-stat count-up" id="kpiTotalTime">--</div>
+              <div class="stat-subtext" id="kpiTotalSub"><em>--</em> mins active logged</div>
+              <svg class="kpi-sparkline" id="kpiSparkline" viewBox="0 0 240 34"></svg>
+            </div>
+          </div>
 
-        <!-- Hourly Pattern & Category Donut -->
-        <div class="charts-grid">
-          <div class="glass-card chart-card stagger-enter stagger-4">
+          <div class="bento-side">
+            <div class="glass-card stagger-enter stagger-2" id="cardTopCat">
+              <div class="section-head"><span>Top Category</span></div>
+              <div style="padding: 10px 18px 16px;">
+                <div class="big-stat" id="kpiTopCat" style="font-size:24px; text-transform:capitalize;">--</div>
+                <div class="stat-subtext" id="kpiTopCatSub">--</div>
+                <svg class="kpi-sparkline" id="kpiTopCatSpark" viewBox="0 0 240 34"></svg>
+              </div>
+            </div>
+            <div class="glass-card stagger-enter stagger-3" id="cardTopApp">
+              <div class="section-head"><span>Most Used App</span></div>
+              <div style="padding: 10px 18px 16px;">
+                <div class="hero-app-row" id="heroAppRow"></div>
+                <div class="stat-subtext" id="kpiTopAppSub">--</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mountain area chart -->
+          <div class="glass-card chart-card bento-full stagger-enter stagger-4">
             <div class="section-head">
               <span>Hourly Activity Pattern</span>
               <span class="badge-tag">24-Hour Distribution</span>
             </div>
-            <div class="chart-wrapper">
-              <svg class="histogram-svg" viewBox="0 0 850 180">
-                <defs>
-                  <linearGradient id="orangeGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="#f97316"/>
-                    <stop offset="100%" stop-color="#ea580c" stop-opacity="0.3"/>
-                  </linearGradient>
-                </defs>
-                <g id="barsGroup"></g>
-              </svg>
-            </div>
+            <div class="chart-wrapper" id="mountainChartWrap"></div>
           </div>
+        </div>
 
-          <div class="glass-card chart-card stagger-enter stagger-5">
+        <!-- Donut + Category rings -->
+        <div class="bento-grid">
+          <div class="glass-card bento-half stagger-enter stagger-5">
             <div class="section-head">
               <span>Category Share</span>
               <span class="badge-tag">Ratio</span>
@@ -190,20 +207,28 @@
               <div class="donut-legend" id="donutLegend"></div>
             </div>
           </div>
-        </div>
 
-        <!-- Leaderboard Card -->
-        <div class="leaderboard-card stagger-enter stagger-6">
-          <div class="section-head">
-            <span>Application & Site Usage</span>
-            <div class="tabs" id="lbTabs">
-              <div class="tab-pill" id="lbTabPill"></div>
-              <button class="tab-btn active" onclick="setLeaderboardTab('all', this)">All</button>
-              <button class="tab-btn" onclick="setLeaderboardTab('software', this)">Software</button>
-              <button class="tab-btn" onclick="setLeaderboardTab('website', this)">Websites</button>
+          <div class="glass-card bento-half stagger-enter stagger-5" id="ringChipsCard">
+            <div class="section-head">
+              <span>Category Rings</span>
+              <span class="badge-tag">Focus Mix</span>
             </div>
+            <div style="padding: 14px 18px 18px; display:flex; flex-direction:column; gap:10px;" id="ringChipsList"></div>
           </div>
-          <div class="leaderboard-list" id="leaderboardList"></div>
+
+          <!-- Leaderboard -->
+          <div class="glass-card leaderboard-card bento-full stagger-enter stagger-6">
+            <div class="section-head">
+              <span>Application & Site Usage</span>
+              <div class="tabs" id="lbTabs">
+                <div class="tab-pill" id="lbTabPill"></div>
+                <button class="tab-btn active" onclick="setLeaderboardTab('all', this)">All</button>
+                <button class="tab-btn" onclick="setLeaderboardTab('software', this)">Software</button>
+                <button class="tab-btn" onclick="setLeaderboardTab('website', this)">Websites</button>
+              </div>
+            </div>
+            <div class="leaderboard-list" id="leaderboardList"></div>
+          </div>
         </div>
       </div>
 
@@ -211,7 +236,7 @@
       <div class="page-view" id="view-timeline">
         <div class="timeline-filter-bar">
           <div class="search-input-wrap">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <svg class="svg-icon search-icon" viewBox="0 0 24 24" width="14" height="14"><circle cx="11" cy="11" r="7.5"/><line x1="16.2" y1="16.2" x2="21" y2="21"/></svg>
             <input type="text" class="search-input" id="searchInput" placeholder="Search app or window title..." oninput="onSearchChange()">
           </div>
           <button class="badge-filter active" onclick="setCategoryFilter('all', this)">All</button>
@@ -224,7 +249,7 @@
 
         <div class="timeline-list" id="timelineList"></div>
         <div class="load-more-wrap" id="loadMoreWrap" style="display:none;">
-          <button class="btn btn-orange" onclick="loadMoreActivities()">Load More Activities</button>
+          <button class="btn btn-accent" onclick="loadMoreActivities()">Load More Activities</button>
         </div>
       </div>
 
@@ -236,24 +261,24 @@
 
       <!-- VIEW 4: YouTube Intelligence Page -->
       <div class="page-view" id="view-youtube">
-        <div class="yt-hero glass-card" style="margin-bottom: 20px;">
+        <div class="glass-card yt-hero" style="margin-bottom: 0;">
           <div class="yt-hero-glow"></div>
           <div class="section-head">
             <span class="yt-hero-title">YouTube Watch Intelligence</span>
             <span class="pill-badge cat-entertainment">Opt-In Connector</span>
           </div>
 
-          <div class="hero-grid yt-kpis" id="youtubeKpis"></div>
+          <div class="yt-kpis" id="youtubeKpis"></div>
 
-          <div class="charts-grid yt-insights-grid" style="margin-top: 18px; margin-bottom: 0;">
+          <div class="yt-insights-grid" style="margin-top: 18px;">
             <div class="glass-card yt-module">
               <div class="section-head"><span>Top Channels Watched</span></div>
-              <div id="youtubeTopChannels" style="display:flex; flex-direction:column; gap:8px; margin-top:12px;"></div>
+              <div id="youtubeTopChannels" style="display:flex; flex-direction:column; gap:8px; margin-top:8px; padding: 0 18px 14px;"></div>
             </div>
 
             <div class="glass-card yt-module">
               <div class="section-head"><span>Topic Breakdown</span></div>
-              <div id="youtubeTopTopics" style="display:flex; flex-direction:column; gap:10px; margin-top:12px;"></div>
+              <div id="youtubeTopTopics" style="display:flex; flex-direction:column; gap:10px; margin-top:8px;"></div>
             </div>
           </div>
         </div>
@@ -262,15 +287,15 @@
           <div class="section-head">
             <span>Video Playback Sessions</span>
           </div>
-          <div class="timeline-filter-bar">
+          <div class="timeline-filter-bar" style="padding: 0 18px; margin-top: 12px;">
             <div class="search-input-wrap" style="flex:1;">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <svg class="svg-icon search-icon" viewBox="0 0 24 24" width="14" height="14"><circle cx="11" cy="11" r="7.5"/><line x1="16.2" y1="16.2" x2="21" y2="21"/></svg>
               <input type="text" class="search-input" id="ytSearchInput" placeholder="Search video title or channel..." oninput="onYouTubeSearchChange()">
             </div>
             <button class="badge-filter active" onclick="filterYouTubeCategory('all', this)">All Videos</button>
             <button class="badge-filter" onclick="filterYouTubeCategory('long', this)">Long Form</button>
             <button class="badge-filter" onclick="filterYouTubeCategory('short', this)">Shorts</button>
-            <button class="btn" style="margin-left: auto; color: #ef4444; border-color: rgba(239, 68, 68, 0.3);" onclick="clearYouTubeHistory()">Clear YouTube History</button>
+            <button class="btn btn-danger" style="margin-left: auto;" onclick="clearYouTubeHistory()">Clear YouTube History</button>
           </div>
 
           <div id="youtubeVideos"></div>
@@ -279,7 +304,7 @@
 
       <!-- VIEW 5: Live Screen Page -->
       <div class="page-view" id="view-livescreen">
-        <div class="controls-bar" style="margin-bottom: 16px;">
+        <div class="controls-bar" style="margin-bottom: 0;">
           <div style="display:flex; align-items:center; gap:10px;">
             <div class="status-badge">
               <span class="status-dot" id="screenDot"></span>
@@ -298,7 +323,7 @@
           </div>
         </div>
 
-        <div class="glass-card" style="text-align:center; padding:16px; overflow:hidden;">
+        <div class="glass-card" style="text-align:center; padding:14px; overflow:hidden;">
           <img id="liveScreenImg" src="/api/screen" style="max-width:100%; height:auto; border-radius:var(--radius-md); border:1px solid var(--border);" alt="Live Monitor Screen">
         </div>
       </div>
@@ -320,7 +345,7 @@
               <strong style="display:block; font-size:14px; margin-bottom:4px;">Background Activity Collector</strong>
               <span style="color:var(--text-muted); font-size:12px;">Windows window title & idle sampling (every 5s)</span>
             </div>
-            <button class="btn btn-orange" onclick="togglePause()">Toggle Pause</button>
+            <button class="btn btn-accent" onclick="togglePause()">Toggle Pause</button>
           </div>
 
           <div class="setting-item">
@@ -339,8 +364,8 @@
 
   <!-- Chart Tooltip -->
   <div class="chart-tooltip" id="chartTooltip">
-    <div class="tooltip-header" id="tooltipHeader"></div>
-    <div class="tooltip-body" id="tooltipBody"></div>
+    <div id="tooltipHeader"></div>
+    <div id="tooltipBody"></div>
   </div>
 
   <!-- Interactive Video Modal -->
@@ -355,7 +380,7 @@
         <div id="modalVideoTags" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
       </div>
 
-      <div id="modalDescWrap" style="margin-bottom:14px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:var(--radius-md); padding:10px; font-size:11px; max-height:100px; overflow-y:auto; color:var(--text-muted);">
+      <div id="modalDescWrap" style="margin-bottom:14px; background:var(--accent-faint); border:1px solid var(--border); border-radius:var(--radius-md); padding:10px; font-size:11px; max-height:100px; overflow-y:auto; color:var(--text-muted);">
         <p id="modalVideoDesc" style="margin:0; line-height:1.4; white-space:pre-wrap;"></p>
       </div>
 
@@ -363,11 +388,11 @@
         <tr><td>Video ID</td><td id="modalVideoId"></td></tr>
         <tr><td>Type</td><td id="modalVideoType" style="text-transform:capitalize;"></td></tr>
         <tr><td>Seek Timestamp</td><td id="modalVideoPos"></td></tr>
-        <tr><td>Watch Duration</td><td id="modalVideoDur" style="font-weight:700; color:var(--orange-primary);"></td></tr>
+        <tr><td>Watch Duration</td><td id="modalVideoDur" style="font-weight:700; color:var(--accent-bright);"></td></tr>
       </table>
 
       <div style="margin-top:16px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
-        <a id="modalWatchBtn" href="#" target="_blank" class="btn btn-orange" style="text-decoration:none;">Watch on YouTube</a>
+        <a id="modalWatchBtn" href="#" target="_blank" class="btn btn-accent" style="text-decoration:none;">Watch on YouTube</a>
         <div style="display:flex; align-items:center; gap:8px;">
           <span id="modalTranscriptStatus" style="padding:4px 10px; border-radius:99px; font-size:10px; font-weight:700; display:inline-flex; align-items:center; gap:4px;"></span>
           <button id="modalToggleTranscriptBtn" class="btn" onclick="toggleModalTranscript()"><span>Show Transcript</span></button>
@@ -375,7 +400,7 @@
         </div>
       </div>
 
-      <div id="modalTranscriptBox" style="display:none; margin-top:14px; background:rgba(0,0,0,0.5); border:1px solid var(--border); border-radius:var(--radius-md); padding:12px; max-height:160px; overflow-y:auto; font-size:11px; line-height:1.5;"></div>
+      <div id="modalTranscriptBox" style="display:none; margin-top:14px; background:var(--panel-solid); border:1px solid var(--border); border-radius:var(--radius-md); padding:12px; max-height:160px; overflow-y:auto; font-size:11px; line-height:1.5;"></div>
     </div>
   </div>
 
