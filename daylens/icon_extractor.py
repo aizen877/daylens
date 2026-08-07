@@ -12,11 +12,6 @@ from io import BytesIO
 from typing import Dict, Optional
 
 try:
-    import psutil  # type: ignore
-except ImportError:
-    psutil = None
-
-try:
     from PIL import Image
 except ImportError:
     Image = None
@@ -24,26 +19,14 @@ except ImportError:
 _ICON_CACHE: Dict[str, str] = {}
 
 
-def get_exe_path(app_name: str) -> Optional[str]:
+def get_exe_path(app_name: str, skip_psutil: bool = True) -> Optional[str]:
     if sys.platform != "win32":
         return None
 
     app_clean = app_name.strip()
     app_lower = app_clean.lower()
 
-    # 1. Scan running processes via psutil
-    if psutil:
-        for proc in psutil.process_iter(["name", "exe"]):
-            try:
-                p_name = proc.info.get("name")
-                if p_name and p_name.lower() == app_lower:
-                    p_exe = proc.info.get("exe")
-                    if p_exe and os.path.exists(p_exe):
-                        return p_exe
-            except Exception:
-                pass
-
-    # 2. Check common Windows system & program directories
+    # 1. Check common Windows system & program directories first (fastest file system check)
     system_root = os.environ.get("SystemRoot", r"C:\Windows")
     program_files = os.environ.get("ProgramFiles", r"C:\Program Files")
     program_files_x86 = os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")
@@ -90,7 +73,7 @@ def extract_exe_icon_base64(app_name: str, conn: Optional[sqlite3.Connection] = 
     if sys.platform != "win32" or Image is None:
         return None
 
-    path = get_exe_path(app_clean)
+    path = get_exe_path(app_clean, skip_psutil=True)
     if not path:
         return None
 
@@ -178,7 +161,6 @@ _CHANNEL_AVATAR_CACHE: Dict[str, str] = {}
 
 
 def fetch_channel_avatar(channel_name: str, conn: Optional[sqlite3.Connection] = None) -> Optional[str]:
-    """Fetch YouTube channel avatar logo URL via oEmbed, search, or UI-Avatars with caching."""
     ch_clean = channel_name.strip()
     if not ch_clean or ch_clean == "YouTube Channel":
         return None
@@ -195,32 +177,44 @@ def fetch_channel_avatar(channel_name: str, conn: Optional[sqlite3.Connection] =
         except Exception:
             pass
 
+    # Try to fetch the REAL channel avatar via YouTube oEmbed (channel URL -> avatar),
+    # then fall back to a deterministic initials badge. Result is cached in SQLite so
+    # the network is hit at most once per channel.
     import json
-    import re
     import urllib.parse
     import urllib.request
 
-    handle = ch_clean.replace(" ", "")
+    import re
+
     avatar_url = None
     try:
-        url = f"https://www.youtube.com/oembed?url=https://www.youtube.com/@{urllib.parse.quote(handle)}&format=json"
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        handle = ch_clean.replace(" ", "")
+        oembed_url = f"https://www.youtube.com/oembed?url=https://www.youtube.com/@{urllib.parse.quote(handle)}&format=json"
+        req = urllib.request.Request(oembed_url, headers={"User-Agent": "Mozilla/5.0"})
         with urllib.request.urlopen(req, timeout=3) as resp:
             data = json.loads(resp.read().decode())
-            if "thumbnail_url" in data:
-                avatar_url = data["thumbnail_url"]
+            if data.get("thumbnail_url"):
+                avatar_url = str(data["thumbnail_url"]).split("?")[0]
     except Exception:
         pass
 
+    # oEmbed often 404s on @handle URLs; fall back to scraping the search page
+    # for a yt3.ggpht.com channel avatar.
     if not avatar_url:
         try:
             search_url = f"https://www.youtube.com/results?search_query={urllib.parse.quote(ch_clean)}"
-            req = urllib.request.Request(search_url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
-            with urllib.request.urlopen(req, timeout=4) as resp:
+            req = urllib.request.Request(
+                search_url,
+                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
+            )
+            with urllib.request.urlopen(req, timeout=5) as resp:
                 html = resp.read().decode("utf-8", errors="ignore")
-                urls = re.findall(r"https://yt3\.ggpht\.com/[a-zA-Z0-9_\-=/]+", html)
-                if urls:
-                    avatar_url = urls[0]
+            found = re.findall(r"https://yt3\.ggpht\.com/[a-zA-Z0-9_\-=/]+", html)
+            # Prefer avatar URLs (square-crop marker) over channel banners
+            avatarish = [u for u in found if "-c-k-c0x00ffffff" in u] or found
+            if avatarish:
+                base = avatarish[0].split("=")[0]
+                avatar_url = base + "=s176-c-k-c0x00ffffff-no-rj"
         except Exception:
             pass
 
@@ -229,7 +223,10 @@ def fetch_channel_avatar(channel_name: str, conn: Optional[sqlite3.Connection] =
 
     _CHANNEL_AVATAR_CACHE[ch_clean] = avatar_url
 
-    if conn and avatar_url:
+    # Persist only REAL avatars so a temporary lookup failure never permanently
+    # pins the initials fallback; the in-memory cache still avoids re-scraping
+    # per request within this process.
+    if conn and avatar_url and "yt3.ggpht.com" in avatar_url:
         try:
             conn.execute("INSERT OR REPLACE INTO app_icons(app, icon_data) VALUES (?, ?)", (f"yt_ch_{ch_clean}", avatar_url))
             conn.commit()
@@ -243,7 +240,6 @@ _VIDEO_DURATION_CACHE: Dict[str, int] = {}
 
 
 def fetch_yt_video_duration(video_id: str, conn: Optional[sqlite3.Connection] = None) -> int:
-    """Fetch YouTube total video length in seconds from YouTube HTML videoDetails with SQLite caching."""
     vid = video_id.strip()
     if not vid:
         return 0
@@ -261,29 +257,4 @@ def fetch_yt_video_duration(video_id: str, conn: Optional[sqlite3.Connection] = 
         except Exception:
             pass
 
-    import re
-    import urllib.request
-
-    dur = 0
-    try:
-        url = f"https://www.youtube.com/watch?v={vid}"
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
-        with urllib.request.urlopen(req, timeout=4) as resp:
-            html = resp.read().decode("utf-8", errors="ignore")
-            match = re.search(r'\"lengthSeconds\":\"(\d+)\"', html)
-            if match:
-                dur = int(match.group(1))
-    except Exception:
-        pass
-
-    if dur > 0:
-        _VIDEO_DURATION_CACHE[vid] = dur
-        if conn:
-            try:
-                conn.execute("INSERT OR REPLACE INTO yt_durations(video_id, duration_seconds) VALUES (?, ?)", (vid, dur))
-                conn.commit()
-            except Exception:
-                pass
-
-    return dur
-
+    return 0

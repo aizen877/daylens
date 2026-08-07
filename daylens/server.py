@@ -120,10 +120,11 @@ def ingest_event(payload: dict) -> dict:
         if event["source"] == "youtube" and event.get("video_id"):
             now_iso = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
             video_url = f"https://www.youtube.com/watch?v={event['video_id']}"
+            # thumbnail_url stores the VIDEO thumbnail (favIconUrl), not the channel avatar
             conn.execute("""INSERT INTO youtube_videos(video_id, url, title, channel_name, duration_seconds, video_type, thumbnail_url, transcript_status, analysis_status, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, 'unknown', 'pending', ?, ?)
-                ON CONFLICT(video_id) DO UPDATE SET title=excluded.title, channel_name=excluded.channel_name, duration_seconds=MAX(youtube_videos.duration_seconds, excluded.duration_seconds), video_type=excluded.video_type, updated_at=excluded.updated_at""",
-                (event["video_id"], video_url, event["title"], event.get("channel", ""), event.get("duration_seconds", 0), event.get("video_type", "long"), event.get("channel_icon", ""), now_iso, now_iso))
+                ON CONFLICT(video_id) DO UPDATE SET title=excluded.title, channel_name=excluded.channel_name, duration_seconds=MAX(youtube_videos.duration_seconds, excluded.duration_seconds), video_type=excluded.video_type, thumbnail_url=excluded.thumbnail_url, updated_at=excluded.updated_at""",
+                (event["video_id"], video_url, event["title"], event.get("channel", ""), event.get("duration_seconds", 0), event.get("video_type", "long"), event.get("favIconUrl", ""), now_iso, now_iso))
             conn.commit()
 
         # Update and extend active session's ended_at timestamp in real time
@@ -313,6 +314,8 @@ class Handler(BaseHTTPRequestHandler):
                             "title": row["window_title"],
                             "channel": meta.get("channel", "YouTube Channel"),
                             "channel_icon": meta.get("channel_icon", ""),
+                            "tags": meta.get("tags") or [],
+                            "meta": meta,
                             "video_type": vtype,
                             "video_id": meta.get("video_id", ""),
                             "position_seconds": meta.get("position_seconds", 0),
@@ -324,8 +327,12 @@ class Handler(BaseHTTPRequestHandler):
                         items_map[vid]["position_seconds"] = max(items_map[vid]["position_seconds"], meta.get("position_seconds", 0))
                         if meta.get("duration_seconds"):
                             items_map[vid]["duration_seconds"] = max(items_map[vid]["duration_seconds"], meta.get("duration_seconds", 0))
-                        if meta.get("channel_icon"):
+                        # Rows come newest-first; keep the MOST RECENT non-empty
+                        # channel icon instead of letting older rows overwrite it.
+                        if not items_map[vid]["channel_icon"] and meta.get("channel_icon"):
                             items_map[vid]["channel_icon"] = meta["channel_icon"]
+                        if not items_map[vid].get("tags") and meta.get("tags"):
+                            items_map[vid]["tags"] = meta["tags"]
                         w_sec = 0
                         if "actual_watch_seconds" in meta and meta["actual_watch_seconds"] is not None:
                             w_sec = int(meta["actual_watch_seconds"])
@@ -379,19 +386,20 @@ class Handler(BaseHTTPRequestHandler):
                         item["channel_icon"] = fetch_channel_avatar(item["channel"], conn) or ""
                     if not item.get("duration_seconds") and item.get("video_id"):
                         item["duration_seconds"] = fetch_yt_video_duration(item["video_id"], conn) or 0
-                    raw_tags = meta.get("tags") or []
+                    raw_tags = item.get("tags") or []
                     if not raw_tags:
                         t_words = [w.strip("#,.!\"'?").lower() for w in item.get("title", "").split() if len(w) > 3]
                         raw_tags = [f"#{w}" for w in t_words[:6]]
                     item["tags"] = raw_tags
                     if item.get("video_id"):
+                        item_meta = item.get("meta") or {}
                         v_meta = conn.execute("SELECT description, transcript_status, analysis_status FROM youtube_videos WHERE video_id = ?", (item["video_id"],)).fetchone()
                         if v_meta:
-                            item["description"] = v_meta["description"] or meta.get("description", "")
+                            item["description"] = v_meta["description"] or item_meta.get("description", "")
                             item["transcript_status"] = v_meta["transcript_status"] or "unknown"
                             item["analysis_status"] = v_meta["analysis_status"] or "pending"
                         else:
-                            item["description"] = meta.get("description", "")
+                            item["description"] = item_meta.get("description", "")
                             item["transcript_status"] = "unknown"
                             item["analysis_status"] = "pending"
 
@@ -483,77 +491,10 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/stats":
                 range_type = params.get("range", ["today"])[0]
                 custom_date = params.get("date", [None])[0]
-                date_from, date_to = resolve_date_range(range_type, custom_date)
-
-                app_rows = app_summary(conn, date_from, date_to)
-                cat_rows = summary(conn, date_from, date_to)
-
-                # Calculate real wall-clock active minutes by merging overlapping intervals
-                rows_all = conn.execute("SELECT started_at, ended_at FROM activities WHERE datetime(started_at, 'localtime') BETWEEN datetime(?) AND datetime(?)", (date_from, date_to)).fetchall()
-                all_intervals = []
-                for r in rows_all:
-                    try:
-                        s = datetime.fromisoformat(r["started_at"].replace(" ", "T").replace("Z", "+00:00"))
-                        e = datetime.fromisoformat(r["ended_at"].replace(" ", "T").replace("Z", "+00:00"))
-                        if e > s: all_intervals.append((s, e))
-                    except Exception: pass
-                
-                sorted_inv = sorted(all_intervals, key=lambda x: x[0])
-                merged = []
-                if sorted_inv:
-                    cs, ce = sorted_inv[0]
-                    for s, e in sorted_inv[1:]:
-                        if s <= ce: ce = max(ce, e)
-                        else: merged.append((cs, ce)); cs, ce = s, e
-                    merged.append((cs, ce))
-                total_min = sum((e - s).total_seconds() for s, e in merged) / 60.0
-
-                apps_json = [
-                    {
-                        "category": r["category"],
-                        "app": r["app"],
-                        "source": r["source"] or "collector",
-                        "icon": extract_exe_icon_base64(r["app"], conn),
-                        "minutes": float(r["minutes"] or 0),
-                        "sessions": int(r["sessions"] or 0),
-                    }
-                    for r in app_rows
-                ]
-
-                cat_breakdown_map: dict[str, float] = {}
-                for r in cat_rows:
-                    cat = r["category"]
-                    mins = float(r["minutes"] or 0)
-                    cat_breakdown_map[cat] = cat_breakdown_map.get(cat, 0.0) + mins
-
-                cat_breakdown = [
-                    {"category": cat, "minutes": round(mins, 1)}
-                    for cat, mins in sorted(cat_breakdown_map.items(), key=lambda x: x[1], reverse=True)
-                ]
-
-                sum_cat_mins = sum(c["minutes"] for c in cat_breakdown)
-                total_min = max(total_min, sum_cat_mins)
-
-                hourly = get_hourly_stats(conn, date_from, date_to)
-
-                top_app_name = app_rows[0]["app"] if app_rows else None
-                top_app_min = float(app_rows[0]["minutes"] or 0) if app_rows else 0
-                top_app_icon = extract_exe_icon_base64(top_app_name, conn) if top_app_name else None
-
-                payload = {
-                    "is_paused": is_paused(),
-                    "range": range_type,
-                    "total_minutes": round(total_min, 1),
-                    "total_hours": round(total_min / 60, 1),
-                    "top_category": cat_rows[0]["category"] if cat_rows else None,
-                    "top_app": top_app_name,
-                    "top_app_minutes": top_app_min,
-                    "top_app_icon": top_app_icon,
-                    "categories": apps_json,
-                    "cat_breakdown": cat_breakdown,
-                    "hourly": hourly,
-                }
+                from daylens.db import get_all_stats
+                payload = get_all_stats(conn, range_type, custom_date)
                 self.send_json(payload)
+                return
                 return
 
             if path == "/api/activities":
